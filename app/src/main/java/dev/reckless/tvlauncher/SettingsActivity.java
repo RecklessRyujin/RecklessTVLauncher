@@ -1,49 +1,80 @@
 package dev.reckless.tvlauncher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
 public class SettingsActivity extends Activity {
     private static final String PREFS = "reckless_launcher_prefs";
     private static final int REQUEST_WALLPAPER = 421;
+    private static final int DEFAULT_ACCENT = Color.rgb(26, 174, 102);
+    private static final int DEFAULT_BACKGROUND = Color.rgb(16, 21, 28);
+
     private LinearLayout content;
+    private ScrollView scroll;
     private SharedPreferences prefs;
     private int accent;
     private int bg;
+    private final ArrayList<View> tileViews = new ArrayList<>();
+    private final ArrayList<TextView> accentTexts = new ArrayList<>();
 
-    @Override protected void onCreate(Bundle state) {
+    @Override
+    protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        accent = prefs.getInt("accent", Color.rgb(26,174,102));
-        bg = prefs.getInt("background", Color.rgb(16,21,28));
+        loadAppearancePreferences();
 
-        ScrollView scroll = new ScrollView(this);
+        scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(bg);
         scroll.setPadding(dp(36), dp(24), dp(36), dp(28));
+
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
         setContentView(scroll);
+        applyAppearanceToScreen();
         buildHome();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (prefs != null && scroll != null) {
+            loadAppearancePreferences();
+            applyAppearanceToScreen();
+            refreshAccent();
+        }
+    }
+
+    private void loadAppearancePreferences() {
+        accent = prefs.getInt("accent", DEFAULT_ACCENT);
+        bg = prefs.getInt("background", DEFAULT_BACKGROUND);
+    }
+
+    private void applyAppearanceToScreen() {
+        if (scroll != null) {
+            scroll.setBackgroundColor(bg);
+            scroll.invalidate();
+        }
+    }
+
     private void buildHome() {
+        clearTrackedViews();
         content.removeAllViews();
         title("RECKLESS TV SETTINGS", "Choose a section");
         section("DEVICE SETTINGS");
@@ -73,20 +104,23 @@ public class SettingsActivity extends Activity {
     }
 
     private void buildAppearance() {
+        loadAppearancePreferences();
+        applyAppearanceToScreen();
+        clearTrackedViews();
         content.removeAllViews();
         title("CUSTOMIZE LAUNCHER", "Changes are saved on this device");
         section("HIGHLIGHT COLOR");
-        addButton("Green (default)", "Reckless green", chooseAccent(Color.rgb(26,174,102)));
-        addButton("Blue", "Blue highlight", chooseAccent(Color.rgb(48,132,255)));
-        addButton("Purple", "Purple highlight", chooseAccent(Color.rgb(171,92,255)));
-        addButton("Orange", "Orange highlight", chooseAccent(Color.rgb(255,145,48)));
-        addButton("Red", "Red highlight", chooseAccent(Color.rgb(245,74,88)));
+        addButton("Green (default)", "Reckless green", chooseAccent(DEFAULT_ACCENT));
+        addButton("Blue", "Blue highlight", chooseAccent(Color.rgb(48, 132, 255)));
+        addButton("Purple", "Purple highlight", chooseAccent(Color.rgb(171, 92, 255)));
+        addButton("Orange", "Orange highlight", chooseAccent(Color.rgb(255, 145, 48)));
+        addButton("Red", "Red highlight", chooseAccent(Color.rgb(245, 74, 88)));
 
         section("BACKGROUND COLOR");
-        addButton("Deep navy", "Default dark background", chooseBackground(Color.rgb(16,21,28)));
-        addButton("Pure black", "Black background", chooseBackground(Color.rgb(0,0,0)));
-        addButton("Charcoal", "Slightly lighter dark background", chooseBackground(Color.rgb(30,32,36)));
-        addButton("Dark green", "Green-tinted background", chooseBackground(Color.rgb(9,28,22)));
+        addButton("Deep navy", "Default dark background", chooseBackground(DEFAULT_BACKGROUND));
+        addButton("Pure black", "Black background", chooseBackground(Color.rgb(0, 0, 0)));
+        addButton("Charcoal", "Slightly lighter dark background", chooseBackground(Color.rgb(30, 32, 36)));
+        addButton("Dark green", "Green-tinted background", chooseBackground(Color.rgb(9, 28, 22)));
         addButton("Choose background image", "Pick an image if Fire OS provides a file picker", new Runnable() {
             @Override public void run() { chooseWallpaper(); }
         });
@@ -108,12 +142,13 @@ public class SettingsActivity extends Activity {
         tileValue.setTextColor(Color.WHITE);
         tileValue.setTextSize(15);
         tileValue.setPadding(0, dp(8), 0, dp(4));
-        final int current = prefs.getInt("tile_height", 112);
+        int current = prefs.getInt("tile_height", 112);
         tileValue.setText("Tile height: " + current + " dp");
         content.addView(tileValue);
+
         SeekBar seek = new SeekBar(this);
         seek.setMax(80);
-        seek.setProgress(current - 80);
+        seek.setProgress(Math.max(0, Math.min(80, current - 80)));
         seek.setContentDescription("App tile height");
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
@@ -125,11 +160,12 @@ public class SettingsActivity extends Activity {
             @Override public void onStopTrackingTouch(SeekBar bar) {}
         });
         content.addView(seek, new LinearLayout.LayoutParams(-1, dp(48)));
+
         addButton("Restore appearance defaults", "Green highlight, navy background, four columns", new Runnable() {
             @Override public void run() {
                 prefs.edit().clear().apply();
-                accent = Color.rgb(26,174,102);
-                bg = Color.rgb(16,21,28);
+                loadAppearancePreferences();
+                applyAppearanceToScreen();
                 buildAppearance();
             }
         });
@@ -144,7 +180,8 @@ public class SettingsActivity extends Activity {
             @Override public void run() {
                 accent = color;
                 prefs.edit().putInt("accent", color).apply();
-                Toast.makeText(SettingsActivity.this, "Highlight color saved", Toast.LENGTH_SHORT).show();
+                refreshAccent();
+                Toast.makeText(SettingsActivity.this, "Highlight color updated", Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -153,9 +190,9 @@ public class SettingsActivity extends Activity {
         return new Runnable() {
             @Override public void run() {
                 bg = color;
-                prefs.edit().putInt("background", color).apply();
-                prefs.edit().remove("wallpaper_uri").apply();
-                Toast.makeText(SettingsActivity.this, "Background color saved", Toast.LENGTH_SHORT).show();
+                prefs.edit().putInt("background", color).remove("wallpaper_uri").apply();
+                applyAppearanceToScreen();
+                Toast.makeText(SettingsActivity.this, "Background color updated", Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -180,7 +217,8 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_WALLPAPER && resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri uri = data.getData();
@@ -208,9 +246,11 @@ public class SettingsActivity extends Activity {
         h.setLetterSpacing(0.12f);
         h.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         content.addView(h, params(WRAP, dp(28)));
+        accentTexts.add(h);
+
         TextView s = new TextView(this);
         s.setText(subtitle);
-        s.setTextColor(Color.rgb(243,246,249));
+        s.setTextColor(Color.rgb(243, 246, 249));
         s.setTextSize(25);
         s.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         s.setPadding(0, 0, 0, dp(18));
@@ -220,7 +260,7 @@ public class SettingsActivity extends Activity {
     private void section(String text) {
         TextView t = new TextView(this);
         t.setText(text);
-        t.setTextColor(Color.rgb(132,144,158));
+        t.setTextColor(Color.rgb(132, 144, 158));
         t.setTextSize(11);
         t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         t.setLetterSpacing(0.1f);
@@ -229,53 +269,89 @@ public class SettingsActivity extends Activity {
     }
 
     private void addButton(String label, String detail, final Runnable action) {
-        LinearLayout card = new LinearLayout(this);
+        final LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
         card.setFocusable(true);
         card.setFocusableInTouchMode(false);
         card.setClickable(true);
         card.setPadding(dp(16), dp(10), dp(16), dp(10));
-        card.setBackgroundResource(R.drawable.tile_background);
+        card.setBackground(makeTileBackground(false));
+        tileViews.add(card);
+
         TextView h = new TextView(this);
         h.setText(label);
         h.setTextColor(Color.WHITE);
         h.setTextSize(15);
         h.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         card.addView(h, params(-1, WRAP));
+
         TextView d = new TextView(this);
         d.setText(detail);
-        d.setTextColor(Color.rgb(132,144,158));
+        d.setTextColor(Color.rgb(132, 144, 158));
         d.setTextSize(11);
         d.setPadding(0, dp(3), 0, 0);
         card.addView(d, params(-1, WRAP));
+
         LinearLayout.LayoutParams lp = params(-1, dp(62));
         lp.bottomMargin = dp(7);
         content.addView(card, lp);
+
         card.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { action.run(); }
         });
         card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override public void onFocusChange(View v, boolean focused) {
                 v.setSelected(focused);
-                v.refreshDrawableState();
+                v.setBackground(makeTileBackground(focused));
             }
         });
+    }
+
+    private GradientDrawable makeTileBackground(boolean focused) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(Color.rgb(29, 38, 50));
+        drawable.setCornerRadius(dp(10));
+        drawable.setStroke(dp(focused ? 3 : 1), focused ? accent : Color.rgb(48, 59, 73));
+        return drawable;
+    }
+
+    private void refreshAccent() {
+        for (TextView text : accentTexts) {
+            text.setTextColor(accent);
+        }
+        for (View tile : tileViews) {
+            tile.setBackground(makeTileBackground(tile.hasFocus()));
+        }
+        content.invalidate();
+    }
+
+    private void clearTrackedViews() {
+        tileViews.clear();
+        accentTexts.clear();
     }
 
     private void focusFirst() {
         content.post(new Runnable() {
             @Override public void run() {
-                if (content.getChildCount() > 1) content.getChildAt(2).requestFocus();
+                for (int i = 0; i < content.getChildCount(); i++) {
+                    View child = content.getChildAt(i);
+                    if (child.isFocusable()) {
+                        child.requestFocus();
+                        return;
+                    }
+                }
             }
         });
     }
 
     private static final int WRAP = ViewGroup.LayoutParams.WRAP_CONTENT;
+
     private LinearLayout.LayoutParams params(int width, int height) {
         return new LinearLayout.LayoutParams(width, height);
     }
+
     private int dp(float value) {
-        return (int)(value * getResources().getDisplayMetrics().density + 0.5f);
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 }
