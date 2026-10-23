@@ -4,14 +4,18 @@ import android.app.Activity;
 import android.app.SearchManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,11 +26,12 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private static final int GREEN = Color.rgb(26,174,102);
+    private static final int DEFAULT_GREEN = Color.rgb(26,174,102);
     private static final int TEXT = Color.rgb(243,246,249);
     private static final int MUTED = Color.rgb(132,144,158);
     private GridLayout appGrid;
@@ -34,6 +39,10 @@ public class MainActivity extends Activity {
     private ScrollView scroll;
     private HorizontalScrollView quickScroll;
     private TextView clockView, dateView, countView;
+    private int accent = DEFAULT_GREEN;
+    private int backgroundColor = Color.rgb(16,21,28);
+    private int tileHeight = 112;
+    private int columns = 4;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -49,12 +58,41 @@ public class MainActivity extends Activity {
         scroll.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         updateClock();
         buildQuickActions();
+        applyAppearance();
         loadApps();
     }
 
     @Override protected void onResume() {
         super.onResume();
-        if(appGrid!=null){ updateClock(); loadApps(); }
+        if(appGrid!=null) {
+            updateClock();
+            applyAppearance();
+            loadApps();
+        }
+    }
+
+    private void applyAppearance() {
+        SharedPreferences p=getSharedPreferences("reckless_launcher_prefs", MODE_PRIVATE);
+        accent=p.getInt("accent", DEFAULT_GREEN);
+        backgroundColor=p.getInt("background", Color.rgb(16,21,28));
+        tileHeight=p.getInt("tile_height",112);
+        columns=p.getInt("columns",4);
+        View root=findViewById(R.id.root);
+        Drawable wallpaper=null;
+        String uriString=p.getString("wallpaper_uri",null);
+        if(uriString!=null) {
+            InputStream in=null;
+            try {
+                in=getContentResolver().openInputStream(Uri.parse(uriString));
+                if(in!=null) wallpaper=new BitmapDrawable(getResources(), BitmapFactory.decodeStream(in));
+            } catch(Exception ignored) {
+            } finally {
+                try { if(in!=null) in.close(); } catch(Exception ignored) {}
+            }
+        }
+        if(wallpaper!=null) root.setBackground(wallpaper);
+        else root.setBackgroundColor(backgroundColor);
+        appGrid.setColumnCount(columns);
     }
 
     private void updateClock() {
@@ -116,15 +154,31 @@ public class MainActivity extends Activity {
         }
     }
 
+    private Drawable tileDrawable(boolean focused) {
+        GradientDrawable d=new GradientDrawable();
+        d.setShape(GradientDrawable.RECTANGLE);
+        d.setCornerRadius(dp(18));
+        d.setColor(focused ? blend(backgroundColor,accent,0.22f) : Color.rgb(23,29,37));
+        d.setStroke(dp(focused?3:1), focused?accent:Color.rgb(42,52,64));
+        return d;
+    }
+
+    private int blend(int base, int tint, float amount) {
+        return Color.rgb(
+            (int)(Color.red(base)*(1-amount)+Color.red(tint)*amount),
+            (int)(Color.green(base)*(1-amount)+Color.green(tint)*amount),
+            (int)(Color.blue(base)*(1-amount)+Color.blue(tint)*amount));
+    }
+
     private void addAppTile(final ResolveInfo info) {
         final LinearLayout tile=new LinearLayout(this);
         tile.setOrientation(LinearLayout.VERTICAL); tile.setGravity(Gravity.CENTER);
         tile.setFocusable(true); tile.setFocusableInTouchMode(false); tile.setClickable(true);
-        tile.setBackgroundResource(R.drawable.tile_background);
+        tile.setBackground(tileDrawable(false));
         tile.setContentDescription(info.loadLabel(getPackageManager()));
         tile.setPadding(dp(10),dp(12),dp(10),dp(10));
         GridLayout.LayoutParams lp=new GridLayout.LayoutParams();
-        lp.width=0; lp.height=dp(112);
+        lp.width=0; lp.height=dp(tileHeight);
         lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);
         lp.setMargins(dp(7),dp(7),dp(7),dp(7)); tile.setLayoutParams(lp);
         ImageView icon=new ImageView(this);
@@ -159,8 +213,7 @@ public class MainActivity extends Activity {
         quickActions.removeAllViews();
         addAction("Settings",android.R.drawable.ic_menu_preferences,new Runnable() {
             @Override public void run() {
-                try { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
-                catch(Exception e) { Toast.makeText(MainActivity.this,"Settings unavailable",Toast.LENGTH_SHORT).show(); }
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
         });
         addAction("Refresh apps",android.R.drawable.ic_popup_sync,new Runnable() {
@@ -182,11 +235,11 @@ public class MainActivity extends Activity {
         final LinearLayout item=new LinearLayout(this);
         item.setOrientation(LinearLayout.HORIZONTAL); item.setGravity(Gravity.CENTER_VERTICAL);
         item.setFocusable(true); item.setFocusableInTouchMode(false); item.setClickable(true);
-        item.setBackgroundResource(R.drawable.tile_background);
+        item.setBackground(tileDrawable(false));
         item.setPadding(dp(15),dp(12),dp(18),dp(12)); item.setContentDescription(title);
         LinearLayout.LayoutParams itemLp=new LinearLayout.LayoutParams(dp(190),dp(60));
         itemLp.rightMargin=dp(12); quickActions.addView(item,itemLp);
-        ImageView icon=new ImageView(this); icon.setImageResource(iconRes); icon.setColorFilter(GREEN);
+        ImageView icon=new ImageView(this); icon.setImageResource(iconRes); icon.setColorFilter(accent);
         item.addView(icon,new LinearLayout.LayoutParams(dp(24),dp(24)));
         TextView label=new TextView(this); label.setText(title); label.setTextColor(TEXT);
         label.setTextSize(13); label.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
@@ -202,7 +255,7 @@ public class MainActivity extends Activity {
         view.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override public void onFocusChange(View v,boolean focused) {
                 v.setSelected(focused);
-                v.refreshDrawableState();
+                v.setBackground(tileDrawable(focused));
                 if(focused) v.post(new Runnable() {
                     @Override public void run() {
                         Rect rect=new Rect(0,0,v.getWidth(),v.getHeight());

@@ -9,6 +9,11 @@
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
+            android:name=".SettingsActivity"
+            android:label="Reckless TV Settings"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:label="Reckless TV"
             android:screenOrientation="landscape"
