@@ -1,36 +1,22 @@
 # Reckless TV Launcher
 
-A small, offline-first Android TV home-screen replacement written in Java. Designed for Android 9 / Fire OS 7 and tested by building against compile SDK 35 with target SDK 28.
+A lightweight Java/XML Android TV launcher for Fire OS and Android TV.
 
 ## Features
-- Lightweight Java implementation; no third-party libraries or network permission.
-- Dark app grid that discovers apps with Android TV and standard launcher intents.
-- Remote-friendly focus and selection.
-- Clock, app count, refresh button and settings shortcut.
-- Declares itself as a HOME activity, but does not disable or uninstall Amazon's launcher.
+- Dark premium layout with green accent
+- Clock/date header and organized app grid
+- Four-column app grid with consistent tile spacing
+- Green outline focus state with dark interior
+- No focus scaling/elevation animation, reducing focus clipping at screen edges
+- App discovery via LEANBACK_LAUNCHER and LAUNCHER categories
+- Quick actions for Settings, Refresh apps, and Search
+- No network permission and no external dependencies
 
-## Build on GitHub Actions (phone-friendly)
-1. Create a new GitHub repository.
-2. Upload the contents of this folder to the repository root (the `.github` folder must be included).
-3. Open **Actions** and run **Build Reckless TV Launcher**, or push to the `main` branch.
-4. Open the successful workflow run, scroll to **Artifacts**, and download `RecklessTV-debug-apk`.
-5. Extract the ZIP to get `app-debug.apk`.
+## Build
+Open this repository in GitHub and run the **Build Reckless TV Launcher** workflow under Actions. The workflow uploads `RecklessTV-debug-apk`.
 
-## Install using atvTools
-Install `app-debug.apk` with atvTools' APK installation option if available. Alternatively, if the APK is on a device path accessible to ADB, use:
-```sh
-adb install -r app-debug.apk
-```
-The `adb install` command is run from an ADB client environment, not inside the TV's remote shell unless your app specifically provides a local ADB client command.
+## Install
+Install `app-debug.apk` using atvTools. Package name remains `dev.reckless.tvlauncher`, so it updates the existing installation.
 
-## Important Fire TV behavior
-- Installing this app does not automatically make it the default launcher.
-- Fire OS may continue opening Amazon Home when the Home button is pressed.
-- Keep Amazon's launcher enabled until this launcher is installed and tested. Do not disable `com.amazon.tv.launcher` as part of initial setup.
-- This project is not an ad blocker. Removing the Amazon home screen can reduce exposure to its home-screen promotions, but ads within streaming services or system screens are separate.
-
-## Compatibility
-- Minimum SDK 23
-- Target SDK 28
-- Java 8 language level
-- No AndroidX or external runtime dependencies
+## Notes
+Fire OS may not honor third-party HOME intent filters for the physical Home button. Keep the stock launcher installed until the custom launcher has been tested.
