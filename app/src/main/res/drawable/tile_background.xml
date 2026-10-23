@@ -6,6 +6,13 @@
             <stroke android:width="3dp" android:color="#1AAE66" />
         </shape>
     </item>
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#182820" />
+            <corners android:radius="18dp" />
+            <stroke android:width="3dp" android:color="#1AAE66" />
+        </shape>
+    </item>
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <solid android:color="#20372A" />
