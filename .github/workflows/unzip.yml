@@ -2,6 +2,7 @@
 name: Extract Zip and Replace Repository
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "RecklessTVLauncher-updated.zip"
