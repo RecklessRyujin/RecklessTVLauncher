@@ -1,28 +1,68 @@
-name: Extract Zip and Update Repo
+
+name: Extract Zip and Replace Repository
 
 on:
   push:
     paths:
-      - '*.zip' # Triggers automatically whenever you upload a new zip file
+      - "RecklessTVLauncher-updated.zip"
+
+permissions:
+  contents: write
+  actions: write
 
 jobs:
   unzip:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      - name: Extract Zip File
+      - name: Extract ZIP
         run: |
-          # Replace 'my-folder.zip' with your actual zip file name!
-          # This command unzips the file and overwrites (-o) existing files automatically.
-          unzip -o RecklessTVLauncher-updated.zip
-          
-          # Optional: Remove the zip file itself from the repo after extraction
-          rm RecklessTVLauncher-updated.zip
+          ZIP_FILE="RecklessTVLauncher-updated.zip"
+          TEMP_DIR="$RUNNER_TEMP/launcher-extracted"
 
-      - name: Commit and push changes
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: ZIP file not found!"
+            exit 1
+          fi
+
+          mkdir -p "$TEMP_DIR"
+
+          unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
+
+          # Detect whether the ZIP contains one enclosing project folder.
+          ENTRY_COUNT=$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 | wc -l)
+
+          if [ "$ENTRY_COUNT" -eq 1 ] && [ -d "$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)" ]; then
+            SOURCE_DIR="$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          else
+            SOURCE_DIR="$TEMP_DIR"
+          fi
+
+          echo "Using extracted project directory: $SOURCE_DIR"
+
+          # Remove the uploaded ZIP from the repository.
+          rm -f "$ZIP_FILE"
+
+          # Completely replace project files.
+          # Preserve Git metadata and GitHub workflow files.
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            "$SOURCE_DIR/" "$GITHUB_WORKSPACE/"
+
+      - name: Commit and push replacement
+        id: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-extracted zip file and updated repository contents"
+          commit_message: "Replace launcher project with updated ZIP"
           branch: main
+
+      - name: Start Android build
+        run: gh workflow run build.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
