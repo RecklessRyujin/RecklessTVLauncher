@@ -118,8 +118,11 @@ public class MainActivity extends Activity {
             }
         });
         int count=0;
+        Set<String> hidden=getSharedPreferences("reckless_launcher_prefs",MODE_PRIVATE).getStringSet("hidden_apps",new HashSet<String>());
         for(ResolveInfo info:found) {
             if(info.activityInfo==null || info.activityInfo.packageName.equals(getPackageName())) continue;
+            String appKey=info.activityInfo.packageName+"/"+info.activityInfo.name;
+            if(hidden.contains(appKey)) continue;
             addAppTile(info); count++;
         }
         countView.setText(count+(count==1?" APP":" APPS"));
@@ -215,6 +218,9 @@ public class MainActivity extends Activity {
             @Override public void run() {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
             }
+        });
+        addAction("Manage apps",android.R.drawable.ic_menu_sort_by_size,new Runnable() {
+            @Override public void run() { startActivity(new Intent(MainActivity.this, ManageAppsActivity.class)); }
         });
         addAction("Refresh apps",android.R.drawable.ic_popup_sync,new Runnable() {
             @Override public void run() { loadApps(); }

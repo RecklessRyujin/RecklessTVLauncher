@@ -94,6 +94,15 @@ public class SettingsActivity extends Activity {
             @Override public void run() { openSystem("android.settings.SETTINGS"); }
         });
         section("LAUNCHER");
+        addButton("Manage apps", "Hide or restore apps without uninstalling them", new Runnable() {
+            @Override public void run() { startActivity(new Intent(SettingsActivity.this, ManageAppsActivity.class)); }
+        });
+        addButton("TV health", "Storage, memory, battery, and device details", new Runnable() {
+            @Override public void run() { startActivity(new Intent(SettingsActivity.this, TvHealthActivity.class)); }
+        });
+        addButton("ADB setup & recovery", "Setup guidance and safe recovery commands", new Runnable() {
+            @Override public void run() { startActivity(new Intent(SettingsActivity.this, DeviceToolsActivity.class)); }
+        });
         addButton("Customize appearance", "Colors, tile size, and app grid", new Runnable() {
             @Override public void run() { buildAppearance(); }
         });
@@ -163,7 +172,8 @@ public class SettingsActivity extends Activity {
 
         addButton("Restore appearance defaults", "Green highlight, navy background, four columns", new Runnable() {
             @Override public void run() {
-                prefs.edit().clear().apply();
+                prefs.edit().remove("accent").remove("background").remove("wallpaper_uri")
+                    .remove("columns").remove("tile_height").apply();
                 loadAppearancePreferences();
                 applyAppearanceToScreen();
                 buildAppearance();

@@ -16,6 +16,10 @@
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:usesCleartextTraffic="false">
 
+        <activity android:name=".ManageAppsActivity" android:label="Manage Apps" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".TvHealthActivity" android:label="TV Health" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".DeviceToolsActivity" android:label="ADB Setup and Recovery" android:screenOrientation="landscape" android:exported="false" />
+
         <activity
             android:name=".SettingsActivity"
             android:label="Reckless TV Settings"

@@ -1,22 +1,21 @@
 # Reckless TV Launcher
 
-A lightweight Java/XML Android TV launcher for Fire OS and Android TV.
+A lightweight Java/XML launcher for Fire OS and Android TV. Package name remains `dev.reckless.tvlauncher`; target SDK remains 28 for older Fire OS behavior.
 
-## Features
-- Dark premium layout with green accent
-- Clock/date header and organized app grid
-- Four-column app grid with consistent tile spacing
-- Green outline focus state with dark interior
-- No focus scaling/elevation animation, reducing focus clipping at screen edges
-- App discovery via LEANBACK_LAUNCHER and LAUNCHER categories
-- Quick actions for Settings, Refresh apps, and Search
-- No network permission and no external dependencies
+## Included features
+- Existing dark launcher UI, clock/date, app grid, quick actions, and appearance preferences.
+- Manage Apps: hide and restore launchable apps within Reckless TV. This does not uninstall, disable, or alter app data.
+- TV Health: read-only storage, RAM, and Android/device details. Fire OS may limit reported values.
+- ADB Setup & Recovery: setup guidance, Home-button limitations, and conservative recovery commands.
+- Appearance reset now clears only appearance keys; it preserves hidden-app preferences and unrelated settings.
+
+## Important Fire TV limitations
+- Fire OS may ignore third-party HOME intent filters for the physical Home button. This build does not implement an accessibility overlay or claim to override the Home button.
+- No Amazon/system package debloating is performed. Package dependencies vary by model and firmware; no unverified package list is safe to ship as a one-click debloater.
+- Keep Amazon Home installed and retain a known recovery route. Only re-enable packages you intentionally disabled.
 
 ## Build
-Open this repository in GitHub and run the **Build Reckless TV Launcher** workflow under Actions. The workflow uploads `RecklessTV-debug-apk`.
+Run the **Build Reckless TV Launcher** workflow in GitHub Actions, or run `gradle assembleDebug` with Android SDK installed. The workflow uploads `app-debug.apk`.
 
 ## Install
-Install `app-debug.apk` using atvTools. Package name remains `dev.reckless.tvlauncher`, so it updates the existing installation.
-
-## Notes
-Fire OS may not honor third-party HOME intent filters for the physical Home button. Keep the stock launcher installed until the custom launcher has been tested.
+Install the APK using atvTools. The package name is unchanged, so it can update an existing installation.
