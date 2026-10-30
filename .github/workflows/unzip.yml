@@ -1,0 +1,28 @@
+name: Extract Zip and Update Repo
+
+on:
+  push:
+    paths:
+      - '*.zip' # Triggers automatically whenever you upload a new zip file
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Zip File
+        run: |
+          # Replace 'my-folder.zip' with your actual zip file name!
+          # This command unzips the file and overwrites (-o) existing files automatically.
+          unzip -o RecklessTVLauncher-updated.zip
+          
+          # Optional: Remove the zip file itself from the repo after extraction
+          rm RecklessTVLauncher-updated.zip
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-extracted zip file and updated repository contents"
+          branch: main
